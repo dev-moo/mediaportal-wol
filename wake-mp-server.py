@@ -6,7 +6,7 @@ import socket
 import ConfigParser
 
 # Globals
-leadTime = 10
+LEAD_TIME = 10
 
 # Convert time from a string to datetime format
 def convertTime(strTime):
@@ -24,7 +24,7 @@ def compareTime(start, end, now):
 # Subtract 10 minutes from the start time	
 def subtractTime(T):
 	##T = datetime.datetime.strptime(T, "%Y-%m-%d %H:%M:%S")
-	T = T - datetime.timedelta(minutes = leadTime)
+	T = T - datetime.timedelta(minutes = LEAD_TIME)
 	return T
 
 	
