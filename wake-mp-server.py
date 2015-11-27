@@ -23,7 +23,6 @@ def compareTime(start, end, now):
 	
 # Subtract 10 minutes from the start time	
 def subtractTime(T):
-	##T = datetime.datetime.strptime(T, "%Y-%m-%d %H:%M:%S")
 	T = T - datetime.timedelta(minutes = LEAD_TIME)
 	return T
 
@@ -36,8 +35,8 @@ def powerOn(MAC, bcAddresses):
 
 
 # Add entry	to log file
-def logAction(str):
-	log.write (str(nowTime) + ": " + str + "\n")
+def logAction(logStr):
+	log.write (str(nowTime) + ": " + logStr + "\n")
 
 # Calculate broadcast addresses of local networks (for WOL)	
 def getBroadcastAddresses():
@@ -56,6 +55,7 @@ def getBroadcastAddresses():
 if not os.path.isfile('mpw.conf'):
 	print ("Error - Missing Config File: mpw.conf")
 	quit()
+	
 
 # Get config	
 config = ConfigParser.ConfigParser()
@@ -95,10 +95,12 @@ for line in file:
 	# If a program that is scheduled to record is currently on, send WOL packet
 	if compareTime(startTime, endTime, nowTime):
 		print "Its On! - " + tokens[2]
-		logAction (str(nowTime) + ": " + tokens[2])
+		logAction (tokens[2])
 		powerOn(htpcMAC, broadcastIPs)
 		
 
+# Clean up
 file.close()
 log.close()
+quit()
 		
