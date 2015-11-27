@@ -38,10 +38,6 @@ def getTheStartDay (DT):
 	
 # Main
 
-# Check MP server is online	
-if not online(hostname) == 0:
-	quit()
-
 # Check config file exists	
 if not os.path.isfile('mpw.conf'):
 	print ("Error - Missing Config File: mpw.conf")
@@ -54,17 +50,26 @@ config.read("mpw.conf")
 hostname = config.get('config', 'mp_server')
 sqlUsr = config.get('config', 'sql_user')
 sqlPW = config.get('config', 'sql_password')
-sqlDB = ('config', 'sql_database')
+sqlDB = config.get('config', 'sql_database')
 dataFile = config.get('config', 'db_file')
-	
+
+
+# Check MP server is online	
+if not online(hostname) == 0:
+	quit()
+
 # Open file for output
 f = open(dataFile, 'w')
 
 # Setup connection to MP MySQL Database
-db = MySQLdb.connect(host=hostname, 
+try:
+	db = MySQLdb.connect(host=hostname, 
                      user=sqlUsr, 
                      passwd=sqlPW,
                      db=sqlDB)
+except:
+	print "Unable to connect to MP SQL Server"
+	quit()
 
 # Create Cursor objects to execute SQL queries
 cur = db.cursor()
