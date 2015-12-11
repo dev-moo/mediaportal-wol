@@ -4,6 +4,8 @@ import datetime
 import os
 import socket
 import ConfigParser
+import fcntl
+import struct
 
 # Globals
 LEAD_TIME = 10
@@ -23,43 +25,49 @@ def compareTime(start, end, now):
 	
 # Subtract 10 minutes from the start time	
 def subtractTime(T):
+	##T = datetime.datetime.strptime(T, "%Y-%m-%d %H:%M:%S")
 	T = T - datetime.timedelta(minutes = LEAD_TIME)
 	return T
 
 	
 # If on then send wake on lan packet and quit
-def powerOn(MAC, bcAddresses):
-	for bIP in bcAddresses:
-		os.system("wakeonlan -i " + bIP + " " + MAC)
-	quit()
-
+def powerOn(MAC, bIP):
+	os.system("wakeonlan -i " + bIP + " " + MAC)
 
 # Add entry	to log file
-def logAction(logStr):
-	log.write (str(nowTime) + ": " + logStr + "\n")
+def logAction(eventstr):
+	log.write (str(nowTime) + ": " + eventstr + "\n")
 
 # Calculate broadcast addresses of local networks (for WOL)	
-def getBroadcastAddresses():
-	bcAddresses = []
+def get_broadcast_address(ip):
+	tmp = str(ip).split('.')
+	return tmp[0] + "." + tmp[1] + "." + tmp[2] + ".255"
+	 
+
+def get_ip_address(ifname):
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	return socket.inet_ntoa(fcntl.ioctl(
+		s.fileno(),
+		0x8915,  # SIOCGIFADDR
+		struct.pack('256s', ifname[:15])
+	)[20:24])
 	
-	for ipAddress in socket.gethostbyname_ex(socket.gethostname())[2]:
-		tmp = str(ipAddress).split('.')
-		bcAddresses.append(tmp[0] + "." + tmp[1] + "." + tmp[2] + ".255")
-		
-	return bcAddresses
-
-
+	
+	
 # Main
 
 # Check config file exists	
-if not os.path.isfile('mpw.conf'):
+
+dir = os.path.dirname(os.path.abspath(__file__))
+filepath = dir + '/mpw.conf'
+
+if not os.path.isfile(filepath):
 	print ("Error - Missing Config File: mpw.conf")
 	quit()
-	
 
 # Get config	
 config = ConfigParser.ConfigParser()
-config.read("mpw.conf")
+config.read(filepath)
 
 htpcMAC = config.get('config', 'mp_server_mac')	
 dataFile = config.get('config', 'db_file')
@@ -67,7 +75,7 @@ logFile = config.get('config', 'wmps_logfile')
 
 
 # Get broadcast addresses of local networks (for WOL)
-broadcastIPs = getBroadcastAddresses()
+broadcastIP = get_broadcast_address(get_ip_address('eth0'))
 	
 # Open file containing scheduling data for recording
 file = open(dataFile, 'r')
@@ -95,12 +103,10 @@ for line in file:
 	# If a program that is scheduled to record is currently on, send WOL packet
 	if compareTime(startTime, endTime, nowTime):
 		print "Its On! - " + tokens[2]
-		logAction (tokens[2])
-		powerOn(htpcMAC, broadcastIPs)
+		logAction (str(nowTime) + ": " + tokens[2])
+		powerOn(htpcMAC, broadcastIP)
 		
 
-# Clean up
 file.close()
 log.close()
-quit()
 		
